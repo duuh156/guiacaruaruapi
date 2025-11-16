@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+motor
+beanie
+python-dotenv
+python-jose[cryptography]
+passlib[bcrypt]
+googlemaps
+pandas
