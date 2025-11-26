@@ -1,8 +1,8 @@
 # schemas.py
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict, conint, Field
 from beanie import PydanticObjectId
-from typing import Optional
-
+from typing import Optional, Annotated
+from pydantic import conint 
 # 1 autenticaçao 
 
 class UsuarioCreate(BaseModel):
@@ -25,8 +25,19 @@ class FavoritoCreate(BaseModel):
     nome_local: str
 
 class FavoritoResponse(FavoritoCreate):
+    model_config = ConfigDict(from_attributes=True,populate_by_name=True)
     id: PydanticObjectId
     user_id: str
 
-    class Config: 
-        populate_by_name = True
+# AVALIAÇÃO
+class AvaliacaoCreate(BaseModel):
+    place_id_google: str 
+    nota: Annotated[int,Field(ge=1, le=5)]
+    comentario: Optional[str] = None
+    
+class AvaliacaoResponse(AvaliacaoCreate):
+    model_config = ConfigDict(populate_by_name=True)
+    id:PydanticObjectId
+    user_id:str
+
+ 

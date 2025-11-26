@@ -1,5 +1,8 @@
 from beanie import Document
 from pydantic import Field 
+from typing import Optional
+from datetime import datetime
+
 
 # 1. MODELO DE USUARIO 
 class UsuarioDocument(Document):
@@ -17,3 +20,14 @@ class FavoritoDocument(Document):
     
     class Settings: 
         name = "favoritos"
+# 3. MODELO DE AVALIAÇÃO
+class AvaliacaoDocument(Document):
+    user_id: str
+    place_id_google: str 
+    nota: int = Field(ge=1, le=5)
+    comentario: Optional[str] = None 
+    data_criacao: datetime = Field(default_factory=datetime.utcnow)
+    
+    class Settings:
+        name= "avaliacoes"
+        indexes = ["place_id_google"]

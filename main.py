@@ -6,22 +6,23 @@ import googlemaps  # para Google Places
 from datetime import timedelta
 import pandas as pd  # para big data / analise
 from fastapi.security import OAuth2PasswordRequestForm
+from contextlib import asynccontextmanager
 
 # importar modulos
 from database import init_db
-from models import UsuarioDocument, FavoritoDocument
-from schemas import UsuarioCreate, UsuarioResponse, FavoritoCreate, FavoritoResponse
+from models import UsuarioDocument, FavoritoDocument, AvaliacaoDocument
+from schemas import UsuarioCreate, UsuarioResponse, FavoritoCreate, FavoritoResponse, AvaliacaoCreate, AvaliacaoResponse
 from auth import hash_password, verify_password, create_access_token, get_current_user
 
 # CONFIGURAÇÃO INICIAL
 load_dotenv()
-app = FastAPI(title="Guia caruaru API")
+
 
 # INICIALIZAÇÃO DO GOOGLE MAPS
-GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
+GOOGLE_MAPS_API_KEY = "AIzaSyC92SstBVLIzxq-af1W8fcEQbAWa5h06gY"
 if GOOGLE_MAPS_API_KEY:
     gmaps = googlemaps.Client(key=GOOGLE_MAPS_API_KEY)
-else:
+else: 
     gmaps = None
     print("⚠️ AVISO: API Key do Google Maps não encontrada. O servidor iniciou, mas a busca de locais não funcionará.")
 
@@ -29,10 +30,12 @@ CARUARU_LOCATION = (-8.28882, -35.9754)
 
 # LOGICA DE STARTUP
 
-@app.on_event("startup")
-async def startup_ddb_client():
-    """Conecta ao MongoDB antes de inicar o servidor."""
+async def lifespan(app: FastAPI):
+    print("iniciando conexação com o banco de dados...")
     await init_db()
+    yield 
+    print ("seridor desligado")
+app = FastAPI(title="Guia Caruaru API", lifespan=lifespan)
 
 # ENDPOINT AUTENTICAÇÃO
 
@@ -124,3 +127,102 @@ async def get_favoritos(current_user: UsuarioDocument = Depends(get_current_user
     favoritos = await FavoritoDocument.find(FavoritoDocument.user_id == str(current_user.id)).to_list()
     
     return favoritos
+
+#  AVALIAÇÃO 
+@app.post("/avaliacoes", response_model=AvaliacaoResponse,status_code=status.HTTP_201_CREATED)
+async def criar_avaliacao(
+    avaliacao_data: AvaliacaoCreate,
+    current_user: UsuarioDocument = Depends(get_current_user)):
+
+    nova_avaliacao = AvaliacaoDocument (
+     user_id=str(current_user.id), 
+        place_id_google=avaliacao_data.place_id_google,
+        nota=avaliacao_data.nota,
+        comentario=avaliacao_data.comentario)
+
+    await nova_avaliacao.insert()
+    return nova_avaliacao
+
+@app.get("/avaliacoes/{place_id_google}",response_model=List[AvaliacaoResponse])
+async def get_avaliacoes_por_local(place_id_google: str):
+    avaliacoes = await AvaliacaoDocument.find(AvaliacaoDocument.place_id_google ==place_id_google).to_list()
+    return avaliacoes
+
+# CALCULAR A MEDIA DA NOTA 
+@app.get("/avaliacoes/media/{place_id_google}")
+async def get_media_avaliacoes(place_id_google:str):
+    
+    avaliacoes = await AvaliacaoDocument.find(AvaliacaoDocument.place_id_google == place_id_google).to_list()
+    
+    if not avaliacoes:
+        return{"place_id": place_id_google,"media":0,"total_avaliacoes":0}
+    
+    df = pd.DataFrame([vars(a)for a in avaliacoes])
+    media = df['nota'].mean()
+
+    return{ 
+       "place_id":place_id_google,
+       "media": round(media,1),
+       "total_avaliacoes": len(df)} 
+    
+# endpoint exclusivo p/ mapa 
+
+# --- 8. ENDPOINT DO MAPA (VERSÃO MOCK / TESTE) ---
+# Este endpoint devolve dados fixos para o Front-End testar sem precisar da API do Google paga.
+
+@app.get("/mapa/pins")
+async def get_map_pins(
+    tipo: str = "tourist_attraction", 
+    radius: int = 5000
+):
+    """
+    Retorna uma lista fixa de pontos turísticos de Caruaru.
+    Usado para desenvolvimento e testes do Front-End.
+    """
+    print("⚠️ TESTE ATIVADO: Enviando dados de teste para o mapa.")
+    
+    # Lista fixa de lugares reais de Caruaru
+    return [
+        {
+            "titulo": "Alto do Moura",
+            "latitude": -8.281927,
+            "longitude": -35.992667,
+            "place_id": "mock_01",
+            "endereco": "Alto do Moura, Caruaru - PE"
+        },
+        {
+            "titulo": "Feira de Caruaru (Parque 18 de Maio)",
+            "latitude": -8.283354,
+            "longitude": -35.972323,
+            "place_id": "mock_02",
+            "endereco": "Parque 18 de Maio, Centro"
+        },
+        {
+            "titulo": "Pátio de Eventos Luiz Gonzaga",
+            "latitude": -8.285521,
+            "longitude": -35.972012,
+            "place_id": "mock_03",
+            "endereco": "Centro, Caruaru - PE"
+        },
+        {
+            "titulo": "Morro Bom Jesus",
+            "latitude": -8.277712,
+            "longitude": -35.970145,
+            "place_id": "mock_04",
+            "endereco": "Divinópolis, Caruaru"
+        },
+        {
+            "titulo": "Caruaru Shopping",
+            "latitude": -8.297445,
+            "longitude": -35.986878,
+            "place_id": "mock_05",
+            "endereco": "Av. Adjar da Silva Casé, 800"
+        },
+        {
+            "titulo": "Museu do Barro",
+            "latitude": -8.284300,
+            "longitude": -35.973100,
+            "place_id": "mock_06",
+            "endereco": "Praça Cel. José de Vasconcelos, 100"
+        }
+    ]
