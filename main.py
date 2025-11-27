@@ -10,8 +10,8 @@ from contextlib import asynccontextmanager
 
 # importar modulos
 from database import init_db
-from models import UsuarioDocument, FavoritoDocument, AvaliacaoDocument
-from schemas import UsuarioCreate, UsuarioResponse, FavoritoCreate, FavoritoResponse, AvaliacaoCreate, AvaliacaoResponse
+from models import UsuarioDocument, FavoritoDocument, AvaliacaoDocument, EventoDocument
+from schemas import UsuarioCreate, UsuarioResponse, FavoritoCreate, FavoritoResponse, AvaliacaoCreate, AvaliacaoResponse, EventoCreate, EventoResponse
 from auth import hash_password, verify_password, create_access_token, get_current_user
 
 # CONFIGURAÇÃO INICIAL
@@ -169,6 +169,26 @@ async def get_media_avaliacoes(place_id_google:str):
 
 # --- 8. ENDPOINT DO MAPA (VERSÃO MOCK / TESTE) ---
 # Este endpoint devolve dados fixos para o Front-End testar sem precisar da API do Google paga.
+
+# --- ROTAS DE EVENTOS ---
+
+@app.post("/eventos", response_model=EventoResponse, status_code=status.HTTP_201_CREATED)
+async def criar_evento(evento_data: EventoCreate, current_user: UsuarioDocument = Depends(get_current_user)):
+    novo_evento = EventoDocument(
+        nome=evento_data.nome,
+        data_inicio=evento_data.data_inicio,
+        local=evento_data.local,
+        descricao=evento_data.descricao,
+        preco=evento_data.preco,
+        imagem_url=evento_data.imagem_url
+    )
+    await novo_evento.insert()
+    return novo_evento
+
+@app.get("/eventos", response_model=List[EventoResponse])
+async def listar_eventos():
+    return await EventoDocument.find_all().to_list()
+
 
 @app.get("/mapa/pins")
 async def get_map_pins(

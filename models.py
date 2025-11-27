@@ -31,3 +31,14 @@ class AvaliacaoDocument(Document):
     class Settings:
         name= "avaliacoes"
         indexes = ["place_id_google"]
+
+class EventoDocument(Document):
+    nome: str
+    data_inicio: datetime
+    local: str
+    descricao: Optional[str] = None
+    preco: float = 0.0
+    imagem_url: Optional[str] = None
+
+    class Settings:
+        name = "eventos"

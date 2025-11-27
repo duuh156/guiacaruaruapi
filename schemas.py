@@ -3,6 +3,8 @@ from pydantic import BaseModel, EmailStr, ConfigDict, conint, Field
 from beanie import PydanticObjectId
 from typing import Optional, Annotated
 from pydantic import conint 
+from datetime import datetime
+
 # 1 autenticaçao 
 
 class UsuarioCreate(BaseModel):
@@ -40,4 +42,13 @@ class AvaliacaoResponse(AvaliacaoCreate):
     id:PydanticObjectId
     user_id:str
 
- 
+class EventoCreate(BaseModel):
+    nome: str
+    data_inicio: datetime
+    local: str
+    descricao: Optional[str] = "Sem descrição"
+    preco: float = 0.0
+    imagem_url: Optional[str] = None
+
+class EventoResponse(EventoCreate):
+    id: PydanticObjectId

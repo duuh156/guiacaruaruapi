@@ -6,7 +6,7 @@ load_dotenv()
 
 async def init_db():
     # importação local
-    from models import UsuarioDocument, FavoritoDocument, AvaliacaoDocument
+    from models import UsuarioDocument, FavoritoDocument, AvaliacaoDocument, EventoDocument
 
     MONGO_DB_URL = os.getenv("MONGO_DB_URL")
     MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "guia_caruaru_db")
@@ -18,6 +18,6 @@ async def init_db():
 
     await init_beanie(
         database=client[MONGO_DB_NAME],
-            document_models=[UsuarioDocument, FavoritoDocument, AvaliacaoDocument]
+            document_models=[UsuarioDocument, FavoritoDocument, AvaliacaoDocument, EventoDocument ]
 )
     print(f"Conexão com MongoDB '{MONGO_DB_NAME}' estabelecida.")
