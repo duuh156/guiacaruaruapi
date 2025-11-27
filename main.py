@@ -7,6 +7,7 @@ from datetime import timedelta
 import pandas as pd  # para big data / analise
 from fastapi.security import OAuth2PasswordRequestForm
 from contextlib import asynccontextmanager
+from fastapi.middleware.cors import CORSMiddleware
 
 # importar modulos
 from database import init_db
