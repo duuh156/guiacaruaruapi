@@ -18,31 +18,29 @@ from auth import hash_password, verify_password, create_access_token, get_curren
 # CONFIGURAÇÃO INICIAL
 load_dotenv()
 
-
 # INICIALIZAÇÃO DO GOOGLE MAPS
-GOOGLE_MAPS_API_KEY = "AIzaSyC92SstBVLIzxq-af1W8fcEQbAWa5h06gY"
+
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY") 
+
 if GOOGLE_MAPS_API_KEY:
     gmaps = googlemaps.Client(key=GOOGLE_MAPS_API_KEY)
 else: 
     gmaps = None
-    print("⚠️ AVISO: API Key do Google Maps não encontrada. O servidor iniciou, mas a busca de locais não funcionará.")
+    print("⚠️ AVISO: API Key do Google Maps não encontrada.")
 
 CARUARU_LOCATION = (-8.28882, -35.9754)
 
-# LOGICA DE STARTUP
-
+# LOGICA DE STARTUP (Ligar Banco de Dados)
+@asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("iniciando conexação com o banco de dados...")
-    await init_db()
+    print("Iniciando conexão com o banco de dados...")
+    await init_db() 
     yield 
-    print ("seridor desligado")
+    print("Servidor desligado")
+
 app = FastAPI(title="Guia Caruaru API", lifespan=lifespan)
 
-from fastapi.middleware.cors import CORSMiddleware
-
-app = FastAPI() # Você já tem essa linha
-
-# Adicione isso aqui:
+# CONFIGURAÇÃO DO CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], 
