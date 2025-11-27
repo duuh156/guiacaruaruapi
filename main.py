@@ -37,6 +37,19 @@ async def lifespan(app: FastAPI):
     print ("seridor desligado")
 app = FastAPI(title="Guia Caruaru API", lifespan=lifespan)
 
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI() # Você já tem essa linha
+
+# Adicione isso aqui:
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], 
+    allow_credentials=True,
+    allow_methods=["*"], 
+    allow_headers=["*"],
+)
+
 # ENDPOINT AUTENTICAÇÃO
 
 @app.post("/register", response_model=UsuarioResponse, status_code=status.HTTP_201_CREATED)
