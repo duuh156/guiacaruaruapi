@@ -202,59 +202,39 @@ async def listar_eventos():
     return await EventoDocument.find_all().to_list()
 
 
+# --- 8. ENDPOINT DO MAPA 
+
 @app.get("/mapa/pins")
 async def get_map_pins(
     tipo: str = "tourist_attraction", 
     radius: int = 5000
 ):
     """
-    Retorna uma lista fixa de pontos turísticos de Caruaru.
-    Usado para desenvolvimento e testes do Front-End.
+    Busca dados reais no Google Maps.
     """
-    print("⚠️ TESTE ATIVADO: Enviando dados de teste para o mapa.")
-    
-    # Lista fixa de lugares reais de Caruaru
-    return [
-        {
-            "titulo": "Alto do Moura",
-            "latitude": -8.281927,
-            "longitude": -35.992667,
-            "place_id": "mock_01",
-            "endereco": "Alto do Moura, Caruaru - PE"
-        },
-        {
-            "titulo": "Feira de Caruaru (Parque 18 de Maio)",
-            "latitude": -8.283354,
-            "longitude": -35.972323,
-            "place_id": "mock_02",
-            "endereco": "Parque 18 de Maio, Centro"
-        },
-        {
-            "titulo": "Pátio de Eventos Luiz Gonzaga",
-            "latitude": -8.285521,
-            "longitude": -35.972012,
-            "place_id": "mock_03",
-            "endereco": "Centro, Caruaru - PE"
-        },
-        {
-            "titulo": "Morro Bom Jesus",
-            "latitude": -8.277712,
-            "longitude": -35.970145,
-            "place_id": "mock_04",
-            "endereco": "Divinópolis, Caruaru"
-        },
-        {
-            "titulo": "Caruaru Shopping",
-            "latitude": -8.297445,
-            "longitude": -35.986878,
-            "place_id": "mock_05",
-            "endereco": "Av. Adjar da Silva Casé, 800"
-        },
-        {
-            "titulo": "Museu do Barro",
-            "latitude": -8.284300,
-            "longitude": -35.973100,
-            "place_id": "mock_06",
-            "endereco": "Praça Cel. José de Vasconcelos, 100"
-        }
-    ]
+    try:
+        # Chama o Google de verdade
+        results = gmaps.places_nearby(
+            location=CARUARU_LOCATION,
+            radius=radius,
+            language='pt-BR',
+            type=tipo
+        )
+        
+        pins = []
+        for lugar in results.get('results', []):
+            geo = lugar.get('geometry', {}).get('location', {})
+            
+            pins.append({
+                "titulo": lugar.get('name'),
+                "latitude": geo.get('lat'),
+                "longitude": geo.get('lng'),
+                "place_id": lugar.get('place_id'),
+                "endereco": lugar.get('vicinity')
+            })
+            
+        return pins
+
+    except Exception as e:
+        print(f"Erro ao buscar no Google: {e}")
+        raise HTTPException(status_code=503, detail="Erro ao buscar dados do Google Maps.")
