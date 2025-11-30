@@ -13,7 +13,7 @@ load_dotenv()
 
 #  CONIGURAÇÃO DE SEGURANÇA
 
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = os.getenv("guia12345")
 ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES",60))
 
