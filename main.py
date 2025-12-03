@@ -64,22 +64,46 @@ async def register_user(user: UsuarioCreate):
     await new_user.insert()
     return new_user
 
+# main.py - Substitua a função login por esta:
+
 @app.post("/login")
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    """login e retorno do JWT"""
+    print(f"👀 DEBUG: Tentando logar com o email: {form_data.username}")
+    
+    # 1. Busca o usuário
     user = await UsuarioDocument.find_one(UsuarioDocument.email == form_data.username)
+    
+    if not user:
+        print("❌ DEBUG: Usuário NÃO encontrado no banco de dados.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Usuario ou senha incorretos",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # 2. Usuário achado. Vamos ver o que tem na senha_hash
+    print(f"✅ DEBUG: Usuário encontrado: {user.nome}")
+    print(f"🔑 DEBUG: Hash salvo no banco: {user.senha_hash}")
+    print(f"⌨️ DEBUG: Senha digitada: {form_data.password}")
+    
+    # 3. Verifica a senha
+    senha_valida = verify_password(form_data.password, user.senha_hash)
+    print(f"🤔 DEBUG: A senha confere? {senha_valida}")
 
-    # verificar usuario e senha
-    if not user or not verify_password(form_data.password, user.senha_hash):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                            detail="Usuario ou senha incorretos", headers={"www-Authenticate": "Bearer"},)
+    if not senha_valida:
+        print("❌ DEBUG: Senha INVÁLIDA (O hash não bateu).")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Usuario ou senha incorretos",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
-    # CRIA O TOKEN JWT
-
-    access_token_expires = timedelta(minutes=float(
-        os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60)))
+    # 4. Tudo certo
+    print("🚀 DEBUG: Login Sucesso! Gerando token...")
+    access_token_expires = timedelta(minutes=float(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60)))
     access_token = create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires)
+        data={"sub": user.email}, expires_delta=access_token_expires
+    )
     return {"access_token": access_token, "token_type": "bearer"}
 
 # endpoint publico(buscar fora)
