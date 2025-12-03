@@ -70,7 +70,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     user = await UsuarioDocument.find_one(UsuarioDocument.email == form_data.username)
 
     # verificar usuario e senha
-    if not user or not verify_password(form_data.password, user.senha):
+    if not user or not verify_password(form_data.password, user.senha_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Usuario ou senha incorretos", headers={"www-Authenticate": "Bearer"},)
 
