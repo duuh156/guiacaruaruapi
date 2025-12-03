@@ -202,18 +202,16 @@ async def listar_eventos():
     return await EventoDocument.find_all().to_list()
 
 
-# --- 8. ENDPOINT DO MAPA 
-
+# --- 8. ENDPOINT DO MAPA E FOTO
 @app.get("/mapa/pins")
 async def get_map_pins(
     tipo: str = "tourist_attraction", 
     radius: int = 5000
 ):
     """
-    Busca dados reais no Google Maps.
+    Retorna locais com NOME, COORDENADAS e FOTO (URL).
     """
     try:
-        # Chama o Google de verdade
         results = gmaps.places_nearby(
             location=CARUARU_LOCATION,
             radius=radius,
@@ -225,12 +223,22 @@ async def get_map_pins(
         for lugar in results.get('results', []):
             geo = lugar.get('geometry', {}).get('location', {})
             
+            # --- NOVA LÓGICA PARA PEGAR A FOTO ---
+            foto_url = None
+            photos = lugar.get('photos', [])
+            if photos:
+                # Pega o código da primeira foto
+                ref = photos[0].get('photo_reference')
+                # Monta o link completo usando sua chave
+                foto_url = f"https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference={ref}&key={GOOGLE_MAPS_API_KEY}"
+
             pins.append({
                 "titulo": lugar.get('name'),
                 "latitude": geo.get('lat'),
                 "longitude": geo.get('lng'),
                 "place_id": lugar.get('place_id'),
-                "endereco": lugar.get('vicinity')
+                "endereco": lugar.get('vicinity'),
+                "imagem": foto_url # <--- O Front-End vai usar este link aqui!
             })
             
         return pins
