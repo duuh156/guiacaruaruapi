@@ -32,13 +32,15 @@ class AvaliacaoDocument(Document):
         name= "avaliacoes"
         indexes = ["place_id_google"]
 
+
+# --- 4. MODELO DE EVENTOS ---
 class EventoDocument(Document):
     nome: str
-    data_inicio: datetime
+    data_inicio: str
     local: str
-    descricao: Optional[str] = None
-    preco: float = 0.0
+    descricao: str
+    preco: float
     imagem_url: Optional[str] = None
-
+    
     class Settings:
         name = "eventos"
