@@ -98,14 +98,30 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # 4. Tudo certo
-    print("🚀 DEBUG: Login Sucesso! Gerando token...")
-    access_token_expires = timedelta(minutes=float(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60)))
-    access_token = create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
+    # 4. TENTATIVA DE CRIAR TOKEN (COM DEBUG DE ERRO)
+    print("🚀 DEBUG: Senha correta! Tentando criar o token...")
+    
+    try:
+        access_token_expires = timedelta(minutes=float(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60)))
+        
+        # Vamos imprimir as variáveis para garantir que elas existem
+        print(f"🔑 DEBUG: Usando Secret Key: {os.getenv('SECRET_KEY')}")
+        print(f"🧮 DEBUG: Usando Algoritmo: {os.getenv('ALGORITHM', 'HS256')}")
 
+        access_token = create_access_token(
+            data={"sub": user.email}, expires_delta=access_token_expires
+        )
+        print(f"🎫 DEBUG: Token criado com sucesso: {access_token[:10]}...") # Mostra só o começo
+        
+        return {"access_token": access_token, "token_type": "bearer"}
+
+    except Exception as e:
+        print(f"💥 ERRO FATAL AO CRIAR TOKEN: {e}") # <--- AQUI VAI APARECER O MOTIVO
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro interno ao gerar token: {str(e)}"
+        )
+        
 # endpoint publico(buscar fora)
 
 @app.get("/search/place")
