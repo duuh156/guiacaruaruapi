@@ -286,3 +286,70 @@ async def get_map_pins(
     except Exception as e:
         print(f"Erro ao buscar no Google: {e}")
         raise HTTPException(status_code=503, detail="Erro ao buscar dados do Google Maps.")
+    
+    # --- ROTAS DE UTILIDADE (SETUP) ---
+
+@app.post("/setup/eventos")
+async def popular_eventos_automaticamente():
+    """
+    BOTÃO MÁGICO 🪄: Clique aqui para cadastrar os eventos de Caruaru de uma vez só!
+    """
+    # 1. Lista de Eventos 
+    eventos_reais = [
+        {
+            "nome": "Vidinha de Balada - Henrique e Juliano",
+            "data_inicio": "12/12/2025 20:00",
+            "local": "Estacionamento do Polo Caruaru",
+            "descricao": "Show com Henrique e Juliano, Nattan e convidados.",
+            "preco": 120.00,
+            "imagem_url": "https://agendadeshows.com.br/wp-content/uploads/2024/10/henrique-e-juliano-agenda.jpg"
+        },
+        {
+            "nome": "Bregou Festival Caruaru",
+            "data_inicio": "06/12/2025 21:00",
+            "local": "Arena Caruaru",
+            "descricao": "O maior festival de Brega do agreste pernambucano.",
+            "preco": 70.00,
+            "imagem_url": "https://ingressosprime.com/images/events/bregou-festival-caruaru.jpg"
+        },
+        {
+            "nome": "Natal Luz Caruaru",
+            "data_inicio": "24/12/2025 19:00",
+            "local": "Centro da Cidade",
+            "descricao": "Decoração especial e apresentações culturais gratuitas.",
+            "preco": 0.00,
+            "imagem_url": "https://conheca.caruaru.pe.gov.br/wp-content/uploads/2022/12/seresta.jpg"
+        },
+        {
+            "nome": "Réveillon Caruaru 2026",
+            "data_inicio": "31/12/2025 22:00",
+            "local": "Marco Zero",
+            "descricao": "Queima de fogos e shows regionais.",
+            "preco": 0.00,
+            "imagem_url": "https://s2.glbimg.com/reveillon-caruaru.jpg"
+        }
+    ]
+
+    # 2. Inserir no Banco (Evitando duplicados)
+    contador = 0
+    for evento in eventos_reais:
+        # Verifica se já existe um evento com esse nome
+        existe = await EventoDocument.find_one(EventoDocument.nome == evento["nome"])
+        
+        if not existe:
+            # Se não existe, cria um novo
+            novo = EventoDocument(
+                nome=evento["nome"],
+                data_inicio=evento["data_inicio"],
+                local=evento["local"],
+                descricao=evento["descricao"],
+                preco=evento["preco"],
+                imagem_url=evento["imagem_url"]
+            )
+            await novo.insert()
+            contador += 1
+
+    if contador == 0:
+        return {"mensagem": "Os eventos já estavam cadastrados! Nenhuma alteração feita."}
+    
+    return {"mensagem": f"Sucesso! {contador} novos eventos foram criados no banco."}
