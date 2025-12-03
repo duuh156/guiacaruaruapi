@@ -44,7 +44,7 @@ class AvaliacaoResponse(AvaliacaoCreate):
 
 class EventoCreate(BaseModel):
     nome: str
-    data_inicio: datetime
+    data_inicio: str
     local: str
     descricao: Optional[str] = "Sem descrição"
     preco: float = 0.0
