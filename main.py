@@ -60,7 +60,7 @@ async def register_user(user: UsuarioCreate):
     # CRIPTOGRAFIA DA SENHA
     hashed_password = hash_password(user.senha)
     new_user = UsuarioDocument(
-        email=user.email, nome=user.nome, senha=hashed_password)
+        email=user.email, nome=user.nome, senha_hash=hashed_password)
     await new_user.insert()
     return new_user
 
