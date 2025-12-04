@@ -241,15 +241,15 @@ async def criar_evento(evento_data: EventoCreate, current_user: UsuarioDocument 
 async def listar_eventos():
     return await EventoDocument.find_all().to_list()
 
+# main.py - Substitua a função get_map_pins por esta:
 
-# --- 8. ENDPOINT DO MAPA E FOTO
 @app.get("/mapa/pins")
 async def get_map_pins(
     tipo: str = "tourist_attraction", 
     radius: int = 5000
 ):
     """
-    Retorna locais com NOME, COORDENADAS e FOTO (URL).
+    Retorna locais com NOME, FOTO e uma DESCRIÇÃO gerada (Nota + Status).
     """
     try:
         results = gmaps.places_nearby(
@@ -263,14 +263,28 @@ async def get_map_pins(
         for lugar in results.get('results', []):
             geo = lugar.get('geometry', {}).get('location', {})
             
-            # --- NOVA LÓGICA PARA PEGAR A FOTO ---
+            # --- 1. Lógica da FOTO ---
             foto_url = None
             photos = lugar.get('photos', [])
             if photos:
-                # Pega o código da primeira foto
                 ref = photos[0].get('photo_reference')
-                # Monta o link completo usando sua chave
                 foto_url = f"https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference={ref}&key={GOOGLE_MAPS_API_KEY}"
+
+            # --- 2. Lógica da DESCRIÇÃO (Novo!) ---
+            # Google Places Search não dá descrição texto, então montamos uma com dados úteis:
+            nota = lugar.get('rating', 'Sem nota')
+            total_votos = lugar.get('user_ratings_total', 0)
+            
+            # Verifica se está aberto (pode não vir no JSON)
+            aberto_info = lugar.get('opening_hours', {}).get('open_now')
+            status_texto = ""
+            if aberto_info is True:
+                status_texto = "• Aberto agora 🟢"
+            elif aberto_info is False:
+                status_texto = "• Fechado 🔴"
+            
+            # Monta a frase final
+            descricao_gerada = f"Nota: {nota} ⭐ ({total_votos} avaliações) {status_texto}"
 
             pins.append({
                 "titulo": lugar.get('name'),
@@ -278,7 +292,8 @@ async def get_map_pins(
                 "longitude": geo.get('lng'),
                 "place_id": lugar.get('place_id'),
                 "endereco": lugar.get('vicinity'),
-                "imagem": foto_url # <--- O Front-End vai usar este link aqui!
+                "imagem": foto_url,
+                "descricao": descricao_gerada # <--- O Front vai usar isso!
             })
             
         return pins
@@ -286,6 +301,7 @@ async def get_map_pins(
     except Exception as e:
         print(f"Erro ao buscar no Google: {e}")
         raise HTTPException(status_code=503, detail="Erro ao buscar dados do Google Maps.")
+
     
     # --- ROTAS DE UTILIDADE (SETUP) ---
 
